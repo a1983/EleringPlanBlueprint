@@ -1,0 +1,45 @@
+blueprint:
+  name: Minimal electricity hours plan
+  description: Turn on switch on cheapest hours
+  domain: automation
+  input:
+    elering_pricing:
+      name: The Elering pricing source
+      description: Home assistant component Elering prices provider
+      selector:
+        entity:
+          domain: sensor
+    switch_device:
+      name: The switch device
+      description: The device controlled by automation
+      selector:
+        entity:
+          domain: switch
+    hour_count:
+      name: The cheapest hours counts
+      description: The amount of cheapest hours
+      selector:
+        number:
+          min: 1
+          max: 24
+          unit_of_measurement: hours
+      default: 1
+trigger:
+  - platform: state
+    entity_id: !input elering_pricing
+    attribute: price_position
+condition: []
+action:
+  - choose:
+    - conditions:
+      - condition: numeric_state
+        entity_id: !input elering_pricing
+        below: !input hour_count
+        value_template: '{{ state.attributes.price_position - 1 }}'
+      sequence:
+        - service: switch.turn_on
+          entity_id: !input switch_device
+    default:
+      - service: switch.turn_off
+        entity_id: !input switch_device
+mode: single
